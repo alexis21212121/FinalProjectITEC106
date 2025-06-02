@@ -1,0 +1,220 @@
+<!-- subject_list.html -->
+
+{% extends "frontend/base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Subject List</h2>
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Credits</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for subject in subjects %}
+            <tr>
+                <td>{{ subject.code }}</td>
+                <td>{{ subject.name }}</td>
+                <td>{{ subject.credits }}</td>
+                <td>{{ subject.description|default:"-"|truncatechars:50 }}</td>
+                <td>
+                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editSubjectModal{{ subject.id }}">Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteSubject({{ subject.id }})">Delete</button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No subjects found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="mt-4">
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createSubjectModal">
+        Add New Subject
+    </button>
+</div>
+
+<!-- Create Subject Modal -->
+<div class="modal fade" id="createSubjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Subject</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createSubjectForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="newSubjectCode" class="form-label">Subject Code</label>
+                        <input type="text" class="form-control" id="newSubjectCode" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newSubjectName" class="form-label">Subject Name</label>
+                        <input type="text" class="form-control" id="newSubjectName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newSubjectCredits" class="form-label">Credits</label>
+                        <input type="number" class="form-control" id="newSubjectCredits" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newSubjectDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="newSubjectDescription" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Create Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Subject Modal -->
+{% for subject in subjects %}
+<div class="modal fade" id="editSubjectModal{{ subject.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Subject</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editSubjectForm{{ subject.id }}" data-subject-id="{{ subject.id }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editSubjectCode" class="form-label">Subject Code</label>
+                        <input type="text" class="form-control" id="editSubjectCode" value="{{ subject.code }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editSubjectName" class="form-label">Subject Name</label>
+                        <input type="text" class="form-control" id="editSubjectName" value="{{ subject.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editSubjectCredits" class="form-label">Credits</label>
+                        <input type="number" class="form-control" id="editSubjectCredits" value="{{ subject.credits }}" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editSubjectDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="editSubjectDescription" rows="3">{{ subject.description }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+// Create Subject
+document.getElementById('createSubjectForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const data = {
+        code: document.getElementById('newSubjectCode').value,
+        name: document.getElementById('newSubjectName').value,
+        credits: parseInt(document.getElementById('newSubjectCredits').value),
+        description: document.getElementById('newSubjectDescription').value || null
+    };
+    
+    fetch('/api/subjects/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            return response.json().then(err => {
+                let errorMsg = 'Error creating subject';
+                if (err.error) errorMsg = err.error;
+                else if (err.errors) errorMsg = Object.values(err.errors).join(', ');
+                alert(errorMsg);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating subject');
+    });
+});
+
+// Edit Subject
+document.querySelectorAll('form[id^="editSubjectForm"]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const subjectId = this.dataset.subjectId;
+        const formData = {
+            code: this.querySelector('[id^="editSubjectCode"]').value,
+            name: this.querySelector('[id^="editSubjectName"]').value,
+            credits: parseInt(this.querySelector('[id^="editSubjectCredits"]').value),
+            description: this.querySelector('[id^="editSubjectDescription"]').value || null
+        };
+        
+        fetch(`/api/subjects/${subjectId}/`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                return response.json().then(err => {
+                    let errorMsg = 'Error updating subject';
+                    if (err.error) errorMsg = err.error;
+                    else if (err.errors) errorMsg = Object.values(err.errors).join(', ');
+                    alert(errorMsg);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating subject');
+        });
+    });
+});
+
+// Delete Subject
+function deleteSubject(subjectId) {
+    if (confirm('Are you sure you want to delete this subject?')) {
+        fetch(`/api/subjects/${subjectId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = '/subjects/';
+            } else {
+                response.json().then(data => {
+                    alert('Error: ' + (data.error || 'Failed to delete subject'));
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting subject');
+        });
+    }
+}
+</script>
+{% endblock %}

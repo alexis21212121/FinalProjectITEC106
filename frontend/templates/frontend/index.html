@@ -1,0 +1,14 @@
+{% extends "frontend/base.html" %}
+
+{% block content %}
+<div class="jumbotron text-center bg-light p-5 rounded">
+    <h1 class="display-4">Welcome to Student Management System</h1>
+    <p class="lead">Manage student records, subjects, and grades efficiently</p>
+    <hr class="my-4">
+    <p>Get started by viewing students or subjects</p>
+    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+        <a href="/students/" class="btn btn-primary btn-lg px-4 gap-3">View Students</a>
+        <a href="/subjects/" class="btn btn-outline-secondary btn-lg px-4">View Subjects</a>
+    </div>
+</div>
+{% endblock %}

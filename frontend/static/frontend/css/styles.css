@@ -1,0 +1,32 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.jumbotron {
+    background-color: #e9ecef;
+    border-radius: 0.3rem;
+}
+
+.table th {
+    font-weight: 600;
+}
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+footer {
+    margin-top: 2rem;
+    box-shadow: 0 -2px 4px rgba(0,0,0,.1);
+}
+
+.grade-table {
+    margin-top: 1.5rem;
+}
+
+.grade-form {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.3rem;
+    margin-top: 2rem;
+}

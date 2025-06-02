@@ -1,0 +1,247 @@
+{% extends "frontend/base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Student: {{ student.first_name }} {{ student.last_name }}</h2>
+        <p><strong>ID:</strong> {{ student.student_id }}</p>
+        <p><strong>Email:</strong> {{ student.email }}</p>
+        <p><strong>Date of Birth:</strong> {{ student.date_of_birth }}</p>
+    </div>
+</div>
+
+<h3 class="mb-3">Grades</h3>
+<div class="table-responsive mb-4">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Subject</th>
+                <th>Activity</th>
+                <th>Quiz</th>
+                <th>Exam</th>
+                <th>Final Grade</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="grades-table-body">
+            {% for grade in grades %}
+            <tr>
+                <td>{{ grade.subject.name }}</td>
+                <td>{{ grade.activity_grade|default:"-" }}</td>
+                <td>{{ grade.quiz_grade|default:"-" }}</td>
+                <td>{{ grade.exam_grade|default:"-" }}</td>
+                <td>{{ grade.final_grade|floatformat:2 }}</td>
+                <td>
+                    <button class="btn btn-sm btn-warning edit-grade-btn" 
+                            data-grade-id="{{ grade.id }}"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#editGradeModal{{ grade.id }}">Edit</button>
+                    <button class="btn btn-sm btn-danger delete-grade-btn" 
+                            data-grade-id="{{ grade.id }}">Delete</button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">No grades recorded</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h4 class="mb-3">Add New Grade</h4>
+<form id="addGradeForm" class="mb-5">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label for="subject" class="form-label">Subject</label>
+            <select class="form-select" id="subject" name="subject_id" required>
+                <option value="">Select subject...</option>
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="activity" class="form-label">Activity</label>
+            <input type="number" step="0.01" min="0" max="100" class="form-control" 
+                   id="activity" name="activity_grade">
+        </div>
+        <div class="col-md-2">
+            <label for="quiz" class="form-label">Quiz</label>
+            <input type="number" step="0.01" min="0" max="100" class="form-control" 
+                   id="quiz" name="quiz_grade">
+        </div>
+        <div class="col-md-2">
+            <label for="exam" class="form-label">Exam</label>
+            <input type="number" step="0.01" min="0" max="100" class="form-control" 
+                   id="exam" name="exam_grade">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary">Add Grade</button>
+        </div>
+    </div>
+</form>
+
+<!-- Edit Grade Modals -->
+{% for grade in grades %}
+<div class="modal fade" id="editGradeModal{{ grade.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form class="edit-grade-form" data-grade-id="{{ grade.id }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Grade</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="subject-{{ grade.id }}" class="form-label">Subject</label>
+                        <select class="form-select" id="subject-{{ grade.id }}" name="subject_id" required>
+                            <option value="">Select subject...</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}" {% if subject.id == grade.subject.id %}selected{% endif %}>{{ subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="activity-{{ grade.id }}" class="form-label">Activity</label>
+                        <input type="number" step="0.01" min="0" max="100" class="form-control" 
+                               id="activity-{{ grade.id }}" name="activity_grade"
+                               value="{{ grade.activity_grade|default_if_none:"" }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="quiz-{{ grade.id }}" class="form-label">Quiz</label>
+                        <input type="number" step="0.01" min="0" max="100" class="form-control" 
+                               id="quiz-{{ grade.id }}" name="quiz_grade"
+                               value="{{ grade.quiz_grade|default_if_none:"" }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="exam-{{ grade.id }}" class="form-label">Exam</label>
+                        <input type="number" step="0.01" min="0" max="100" class="form-control" 
+                               id="exam-{{ grade.id }}" name="exam_grade"
+                               value="{{ grade.exam_grade|default_if_none:"" }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Handle ADD grade
+    const addForm = document.getElementById('addGradeForm');
+    if (addForm) {
+        addForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const subject = document.getElementById('subject').value;
+            const activity = document.getElementById('activity').value;
+            const quiz = document.getElementById('quiz').value;
+            const exam = document.getElementById('exam').value;
+
+            const requestData = {
+                student_id: Number('{{ student.id }}'),
+                subject_id: Number(subject),
+                activity_grade: activity ? Number(activity) : null,
+                quiz_grade: quiz ? Number(quiz) : null,
+                exam_grade: exam ? Number(exam) : null
+            };
+
+            fetch('/api/grades/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Failed to add grade');
+                    });
+                }
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message);
+            });
+        });
+    }
+
+    // Handle EDIT grade
+    document.querySelectorAll('.edit-grade-form').forEach(form => {
+        const gradeId = form.dataset.gradeId;
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const requestData = {
+                subject_id: Number(form.querySelector('[name="subject_id"]').value),
+                activity_grade: form.querySelector('[name="activity_grade"]').value ? Number(form.querySelector('[name="activity_grade"]').value) : null,
+                quiz_grade: form.querySelector('[name="quiz_grade"]').value ? Number(form.querySelector('[name="quiz_grade"]').value) : null,
+                exam_grade: form.querySelector('[name="exam_grade"]').value ? Number(form.querySelector('[name="exam_grade"]').value) : null
+            };
+
+            fetch('/api/grades/' + gradeId + '/', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Failed to update grade');
+                    });
+                }
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message);
+            });
+        });
+    });
+
+    // Handle DELETE grade
+    document.querySelectorAll('.delete-grade-btn').forEach(button => {
+        const gradeId = button.dataset.gradeId;
+        button.addEventListener('click', () => {
+            if (!confirm('Are you sure you want to delete this grade record?')) {
+                return;
+            }
+
+            fetch('/api/grades/' + gradeId + '/', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Failed to delete grade');
+                    });
+                }
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message);
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

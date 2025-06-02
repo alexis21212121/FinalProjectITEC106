@@ -1,0 +1,228 @@
+<!-- student_list.html -->
+
+{% extends "frontend/base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Student List</h2>
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Date of Birth</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr>
+                <td>{{ student.student_id }}</td>
+                <td>{{ student.first_name }} {{ student.last_name }}</td>
+                <td>{{ student.email }}</td>
+                <td>{{ student.date_of_birth }}</td>
+                <td>
+                    <a href="/students/{{ student.id }}/" class="btn btn-sm btn-info">View</a>
+                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editStudentModal{{ student.id }}">Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteStudent({{ student.id }})">Delete</button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No students found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="mt-4">
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createStudentModal">
+        Add New Student
+    </button>
+</div>
+
+<!-- Create Student Modal -->
+<div class="modal fade" id="createStudentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createStudentForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="newStudentId" class="form-label">Student ID</label>
+                        <input type="text" class="form-control" id="newStudentId" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newFirstName" class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="newFirstName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newLastName" class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="newLastName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="newEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newDob" class="form-label">Date of Birth</label>
+                        <input type="date" class="form-control" id="newDob" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Create Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Student Modal -->
+{% for student in students %}
+<div class="modal fade" id="editStudentModal{{ student.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editStudentForm{{ student.id }}" data-student-id="{{ student.id }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editStudentId" class="form-label">Student ID</label>
+                        <input type="text" class="form-control" id="editStudentId" value="{{ student.student_id }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editFirstName" class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="editFirstName" value="{{ student.first_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editLastName" class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="editLastName" value="{{ student.last_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="editEmail" value="{{ student.email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDob" class="form-label">Date of Birth</label>
+                        <input type="date" class="form-control" id="editDob" value="{{ student.date_of_birth }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+// Create Student
+document.getElementById('createStudentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const data = {
+        student_id: document.getElementById('newStudentId').value,
+        first_name: document.getElementById('newFirstName').value,
+        last_name: document.getElementById('newLastName').value,
+        email: document.getElementById('newEmail').value,
+        date_of_birth: document.getElementById('newDob').value
+    };
+    
+    fetch('/api/students/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            return response.json().then(err => {
+                let errorMsg = 'Error creating student';
+                if (err.error) errorMsg = err.error;
+                else if (err.errors) errorMsg = Object.values(err.errors).join(', ');
+                alert(errorMsg);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating student');
+    });
+});
+
+document.querySelectorAll('form[id^="editStudentForm"]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const studentId = this.dataset.studentId;
+        
+        fetch(`/api/students/${studentId}/`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                student_id: this.querySelector('#editStudentId').value,
+                first_name: this.querySelector('#editFirstName').value,
+                last_name: this.querySelector('#editLastName').value,
+                email: this.querySelector('#editEmail').value,
+                date_of_birth: this.querySelector('#editDob').value
+            })
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                return response.json().then(err => {
+                    let errorMsg = 'Error updating student';
+                    if (err.error) errorMsg = err.error;
+                    else if (err.errors) errorMsg = Object.values(err.errors).join(', ');
+                    alert(errorMsg);
+                });
+            }
+        }).catch(error => {
+            console.error('Error:', error);
+            alert('Error updating student');
+        });
+    });
+});
+
+
+// Delete Student
+function deleteStudent(studentId) {
+    if (confirm('Are you sure you want to delete this student?')) {
+        fetch(`/api/students/${studentId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = '/students/';
+            } else {
+                response.json().then(data => {
+                    alert('Error: ' + (data.error || 'Failed to delete student'));
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting student');
+        });
+    }
+}
+</script>
+{% endblock %}
