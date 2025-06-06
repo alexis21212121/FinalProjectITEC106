@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 import requests
 from django.contrib import messages
 
-BASE_API_URL = 'http://localhost:8000/api/'
+API_BASE_URL = 'https://juvert12321.pythonanywhere.com/api/'
 
 def index(request):
     return render(request, 'frontend/index.html')
