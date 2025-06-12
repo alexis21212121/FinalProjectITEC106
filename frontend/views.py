@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect
 import requests
 from django.contrib import messages
+import os
 
-API_BASE_URL = 'https://juvert12321.pythonanywhere.com/api/'
+# Dynamically get API base URL from environment variable (best practice)
+API_BASE_URL = os.getenv('API_BASE_URL', 'https://finalprojectitec106-production.up.railway.app/api/')
 
 def index(request):
     return render(request, 'frontend/index.html')
